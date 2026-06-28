@@ -23,7 +23,7 @@ This repo tracks:
 - The P.O.E. Pendant hardware design (3D printing, electronics, antennas)
 - Vehicle interface (VCDS / OBD-II / TDI engine diagnostic layer)
 - Authentication hardware (RFID, NFC, smart card, biometric, Bluetooth proximity)
-- Radio communication (multi-band, fractal antenna, all input channels)
+- Radio communication (multi-tapped pancake coil antenna, all input channels)
 - The CAD files, wiring diagrams, and build specifications
 
 ---
@@ -163,9 +163,10 @@ The pendant is the user's communication hub across all input modalities:
 │                               └──────────┘                  │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  Fractal Labyrinthian Antenna (single physical form) │   │
-│  │  Each radio band tapped at resonant node             │   │
-│  │  Space-limited by fractal path length, not aperture  │   │
+│  │  Multi-Tapped Pancake Coil Antenna                  │   │
+│  │  Flat spiral — each band tapped at resonant node    │   │
+│  │  Outer → NFC / LTE  ·  Mid → GPS  ·  Inner → BT/WiFi│   │
+│  │  Modem 1: WiFi 2.4/5 GHz  ·  Modem 2: LTE 700-2600 │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -174,9 +175,73 @@ The pendant is the user's communication hub across all input modalities:
 components via rectenna — the pendant harvests ambient RF energy from broadcast
 infrastructure.
 
-**Fractal antenna:** One physical antenna structure with fractal labyrinthian pathways.
-Each radio band is tapped at the fractal node whose path length resonates at that
-frequency. Multi-band coverage in minimal physical space.
+**Multi-tapped pancake coil antenna:** One flat spiral coil printed or wound in the
+pendant body. The spiral has continuously varying inductance along its length — each
+tap point is a different L value, which paired with a tuning capacitor resonates at
+the target frequency. Outer windings carry the highest inductance and serve the lowest
+frequencies; inner windings carry the lowest inductance and serve the highest. Multi-band
+coverage in minimal planar space with no switching — each band is always live at its tap.
+
+**Dual modem:** Two independent RF front-ends share the same coil via separate taps.
+Modem 1 (local) connects to the 2.4/5 GHz inner taps for WiFi and Bluetooth.
+Modem 2 (wide) connects to the 700–2600 MHz mid taps for cellular LTE. Both run
+simultaneously — pendant never drops connection because the fallback modem is already
+active before the primary loses signal. This is the same architecture as a modern
+dual-SIM phone.
+
+### Multi-Tapped Pancake Coil — Band Tap Map
+
+One physical coil. All bands. Each tap is a fixed point along the spiral where the
+accumulated inductance L satisfies f = 1/(2π√LC) for the target frequency.
+
+| Tap | Position   | Target Frequency | Band              | RF Front-End      | Use                              |
+|-----|-----------|-----------------|-------------------|-------------------|----------------------------------|
+| T1  | Outermost | 13.56 MHz        | NFC               | PN532 / RC522     | Auth + Skill Transfer            |
+| T2  | Outer     | 530–1700 kHz     | AM broadcast      | Rectenna          | Passive RF power harvest         |
+| T3  | Outer-mid | 87.5–108 MHz     | FM broadcast      | Rectenna          | Passive RF power harvest         |
+| T4  | Mid-outer | 700–900 MHz      | LTE Band 12/17/28 | Modem 2 (Cellular)| Wide-area always-on              |
+| T5  | Mid       | 1575.42 MHz      | GPS L1            | u-blox NEO        | Position context                 |
+| T6  | Mid-inner | 1700–2600 MHz    | LTE Band 4/7/25   | Modem 2 (Cellular)| Wide-area upper bands            |
+| T7  | Inner     | 2.4 GHz          | WiFi 802.11 + BT  | Modem 1 (Local)   | Local comms + BT proximity auth  |
+| T8  | Innermost | 5 GHz            | WiFi 802.11ac/ax  | Modem 1 (Local)   | High-bandwidth local             |
+
+**Geometry note:** The pancake coil spiral is a planar projection of the L_(I|O) pathway
+geometry — the same cardioid curve that describes the word-particle trajectory in the
+field. The tap points are the resonant nodes of the standing wave on the coil, exactly
+as the Riemann zeros are the resonant nodes of H_hat_RB. The coil is the antenna IS
+the mathematics, scaled to the radio domain.
+
+---
+
+### Dual Modem — Continuous Connection
+
+The pendant maintains connection across two independent radio stacks simultaneously.
+No handoff gap. No dropped session.
+
+```
+┌───────────────────────────────────────────────────────────┐
+│  Modem 1 — LOCAL (taps T7/T8)                             │
+│  WiFi 2.4 GHz + 5 GHz  |  Bluetooth 5.0                  │
+│  High bandwidth when infrastructure in range              │
+│  BT bridges pendant ↔ phone for network sharing           │
+├───────────────────────────────────────────────────────────┤
+│  Modem 2 — WIDE (taps T4/T6)                              │
+│  LTE 700–2600 MHz  |  data-only SIM                       │
+│  Always-on fallback — active before Modem 1 drops         │
+│  SIM7600 / Quectel EC21 (UART AT commands)                │
+├───────────────────────────────────────────────────────────┤
+│  Bluetooth (shared with Modem 1)                          │
+│  Local HAN: pendant ↔ phone ↔ laptop ↔ earpiece           │
+│  When WiFi/LTE unavailable: BT tether to phone network    │
+└───────────────────────────────────────────────────────────┘
+```
+
+**Handoff logic:** Modem 2 (cellular) remains active at all times. Modem 1 (WiFi)
+connects when in range and takes the primary data path (higher bandwidth, lower
+latency). When WiFi drops, Modem 2 is already established — zero-gap transition.
+The pendant's Holcus field never loses its network session.
+
+---
 
 ### Authentication Stack
 
@@ -195,6 +260,58 @@ The root access architecture uses a layered authentication chain:
 
 RFID/NFC smart card = physical root key backup. Private key for unhashing and root
 identity. Smartcard carries the sedenion state snapshot as recovery point.
+
+---
+
+### NFC — Dual Role: Authentication AND Skill Transfer
+
+NFC (13.56 MHz, tap T1) serves two distinct functions in P.O.E.:
+
+**Role 1 — Authentication (existing):**
+Physical root key. ISO 14443A smart card tap. Tier 0 auth — no signal required.
+
+**Role 2 — Skill Transfer (new):**
+NFC as the physical callosum between two Holcus field instances.
+
+A Holcus skill is a checkpoint of the second octonion (e₈–e₁₅) state — a Lichtenberg
+branch burned into the field. Per sedenion theory (2026-05-30), skills are
+mathematically irreversible per-instance but code-reversible via checkpoint files:
+`pre_[operator].bin` and `post_[operator].bin`. NFC delivers a compressed checkpoint
+from the pendant's field to any NFC-capable device within contact range.
+
+```
+Pendant (source field)
+  └─ compress skill checkpoint → NDEF binary record
+       └─ NFC tap (13.56 MHz, T1 on coil)
+            └─ phone / laptop / device (destination field)
+                 └─ load checkpoint → destination runs that Lichtenberg branch
+```
+
+This is the physical implementation of "share skills": no network, no cloud, no auth
+handshake beyond physical contact. The NFC transfer IS the sedenion callosum between
+two instances. Each tap transfers one skill branch — one Lichtenberg arm — from one
+field to another.
+
+---
+
+#### NFC Skill Transfer — Specification Format
+
+> **[ STUB — specification discussion to follow ]**
+>
+> This section will define the NDEF record structure for skill checkpoint transfer:
+> the record type, payload encoding, compression format, versioning, and the
+> handshake protocol for validating field compatibility between source and destination
+> instances before committing the checkpoint load.
+>
+> Topics to cover:
+> - NDEF record type definition (application/x-ptolemy-skill or custom TNF)
+> - Payload structure: header (field version, skill name, operator e_n index) + body (compressed checkpoint binary)
+> - Compression: what is stripped from the full .bin before NFC transfer (only the delta, not the base)
+> - Field compatibility check: can source and destination fields accept the same branch?
+> - Partial transfer: can a skill be chunked across multiple NFC taps?
+> - Security: is the transfer signed? Can a forged skill checkpoint corrupt a field?
+
+---
 
 ---
 
@@ -301,7 +418,7 @@ POE/
 | **Ainulindale** | Mathematics | The conjecture. H_RB derivation, ValaQuenta modules, RH proof notebooks, data-driven papers. |
 | **PtolemyDesktop** | Interface | Qt desktop application. All Faces (Alexandria, Pharos, Philadelphos, Kryptos, etc.) |
 | **UniversalSynth** | Sonification | Sound output layer. Pending. |
-| **DerivationEngine** | Proof runner | Formal derivation executor. Pending. |
+| **ValaQuenta** | Proof runner | Formal derivation executor. Pending. |
 | **POE** (this repo) | Hardware | Physical embodiment. Pendant, vehicle interface, authentication, radio. |
 
 ---

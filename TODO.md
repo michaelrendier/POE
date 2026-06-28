@@ -52,25 +52,37 @@ Primary MCU for the pendant. Handles comms routing between:
 
 ---
 
-### [ ] Fractal Antenna Design
+### [ ] Multi-Tapped Pancake Coil Antenna Design
 
-Single physical antenna structure — fractal geometry — covering all required bands:
+Single flat spiral coil — one physical structure — covering all required bands via
+tap points along the winding. Each tap has a different accumulated inductance L;
+paired with a tuning capacitor it resonates at the target frequency.
 
-| Band | Frequency | Use |
-|---|---|---|
-| AM broadcast | 530–1700 kHz | Passive RF harvesting (rectenna) |
-| FM broadcast | 87.5–108 MHz | Passive RF harvesting |
-| Shortwave | 1.6–30 MHz | Long-range receive |
-| BT / WiFi | 2.4 GHz | Short-range comms |
-| GPS L1 | 1575.42 MHz | Position |
-| Cellular (LTE) | 700–2600 MHz | WWAN modem |
-| NFC | 13.56 MHz | Authentication proximity |
+| Tap | Frequency        | Band              | RF Module             | Use                        |
+|-----|-----------------|-------------------|-----------------------|----------------------------|
+| T1  | 13.56 MHz        | NFC               | PN532 / RC522         | Auth + Skill Transfer      |
+| T2  | 530–1700 kHz     | AM broadcast      | Rectenna              | Passive power harvest      |
+| T3  | 87.5–108 MHz     | FM broadcast      | Rectenna              | Passive power harvest      |
+| T4  | 700–900 MHz      | LTE low band      | Modem 2 (SIM7600)     | Cellular always-on         |
+| T5  | 1575.42 MHz      | GPS L1            | u-blox NEO-6M         | Position context           |
+| T6  | 1700–2600 MHz    | LTE mid/high band | Modem 2 (SIM7600)     | Cellular upper bands       |
+| T7  | 2.4 GHz          | WiFi 802.11 + BT  | Modem 1 (ESP32 / CM4) | Local comms + BT auth      |
+| T8  | 5 GHz            | WiFi 802.11ac/ax  | Modem 1               | High-bandwidth local       |
 
-**Fractal design requirements:**
-- [ ] Calculate path lengths for each target frequency
-- [ ] Design fractal that places resonant nodes at all required lengths
-- [ ] Simulate impedance at each tap point
-- [ ] Output: printable SVG or GCODE for conductive trace deposition
+**Design targets:**
+- [ ] Calculate coil geometry: number of turns, inner/outer radius, trace width for pendant dimensions
+- [ ] Calculate L at each tap position from spiral inductance formula: L = (r²n²)/(8r+11w) (Wheeler)
+- [ ] Select tuning capacitor C at each tap: C = 1/(4π²f²L)
+- [ ] Simulate impedance at each tap (LTSpice or QUCS) — confirm 50 Ω match or transformer ratio
+- [ ] Design for pendant body: target OD ≤ 40 mm, trace width ≥ 0.3 mm for conductive filament
+- [ ] Output: printable SVG for conductive trace deposition, or wind spec for manual coil
+
+**Dual modem targets:**
+- [ ] Modem 1 (local): ESP32 or CM4 module — WiFi 2.4/5 GHz + Bluetooth 5.0 on taps T7/T8
+- [ ] Modem 2 (wide): SIM7600 or Quectel EC21 — LTE on taps T4/T6; data-only SIM
+- [ ] Firmware: Modem 2 always-on at idle; Modem 1 primary when WiFi in range
+- [ ] Handoff: no session drop — Modem 2 keeps socket alive while Modem 1 connects/disconnects
+- [ ] BT tether path: pendant → BT → phone network (tertiary fallback when both modems unreachable)
 
 ---
 
@@ -116,6 +128,28 @@ compromised. Smart card backup of sedenion field state + private key.
 - [ ] Define data layout: private key + compressed state snapshot
 - [ ] Implement signing protocol for root commands
 - [ ] Test with Arduino Pro Micro NFC module (PN532 or similar)
+
+---
+
+### [ ] NFC Skill Transfer
+
+NFC as callosum between Holcus field instances. One tap transfers one skill branch
+(compressed second-octonion checkpoint) from pendant to any NFC-capable device.
+
+**Skill transfer spec — [ STUB — specification discussion to follow ]**
+
+> The NDEF record structure, payload encoding, compression, versioning, field
+> compatibility check, partial transfer chunking, and security signing protocol
+> will be defined here once the skill transfer specification format is decided.
+
+**Implementation targets (post-spec):**
+- [ ] Define NDEF record type for skill checkpoint (custom TNF or MIME)
+- [ ] Implement checkpoint compression: delta from base.bin only (not full field)
+- [ ] Implement field compatibility check before load (version header match)
+- [ ] Implement NFC write on pendant side (PN532 via I²C to Pro Micro)
+- [ ] Implement NFC read + checkpoint load on phone/laptop side
+- [ ] Test: pendant writes Crawford N-S skill → phone Ptolemy loads it → verify vocabulary active
+- [ ] Security: sign checkpoint with pendant private key; destination verifies before load
 
 ---
 
