@@ -206,27 +206,47 @@ simultaneously — pendant never drops connection because the fallback modem is 
 active before the primary loses signal. This is the same architecture as a modern
 dual-SIM phone.
 
-### Multi-Tapped Pancake Coil — Band Tap Map
+### Multi-Tapped Pancake Coil — Wheeler Numbers (Mohan et al. 1999)
 
-One physical coil. All bands. Each tap is a fixed point along the spiral where the
-accumulated inductance L satisfies f = 1/(2π√LC) for the target frequency.
+One physical coil (17 turns, 38mm OD, 10mm ID, 0.8mm pitch). Inductance per tap
+calculated via `L = (μ₀ × N² × D_avg) / (1 + 2.46ρ)`. Tuning capacitor `C = 1/(4π²f²L)`.
 
-| Tap | Position   | Target Frequency | Band              | RF Front-End      | Use                              |
-|-----|-----------|-----------------|-------------------|-------------------|----------------------------------|
-| T1  | Outermost | 13.56 MHz        | NFC               | PN532 / RC522     | Auth + Skill Transfer            |
-| T2  | Outer     | 530–1700 kHz     | AM broadcast      | Rectenna          | Passive RF power harvest         |
-| T3  | Outer-mid | 87.5–108 MHz     | FM broadcast      | Rectenna          | Passive RF power harvest         |
-| T4  | Mid-outer | 700–900 MHz      | LTE Band 12/17/28 | Modem 2 (Cellular)| Wide-area always-on              |
-| T5  | Mid       | 1575.42 MHz      | GPS L1            | u-blox NEO        | Position context                 |
-| T6  | Mid-inner | 1700–2600 MHz    | LTE Band 4/7/25   | Modem 2 (Cellular)| Wide-area upper bands            |
-| T7  | Inner     | 2.4 GHz          | WiFi 802.11 + BT  | Modem 1 (Local)   | Local comms + BT proximity auth  |
-| T8  | Innermost | 5 GHz            | WiFi 802.11ac/ax  | Modem 1 (Local)   | High-bandwidth local             |
+At resonance: **XL = XC** (inductive = capacitive reactance) → **tan(phase) = 1** →
+sin = cos → σ = ½. The coil finds the Riemann balance point by electromagnetic law,
+not by design. See [hardware_primer.md](hardware_primer.md) for full derivation.
 
-**Geometry note:** The pancake coil spiral is a planar projection of the L_(I|O) pathway
-geometry — the same cardioid curve that describes the word-particle trajectory in the
-field. The tap points are the resonant nodes of the standing wave on the coil, exactly
-as the Riemann zeros are the resonant nodes of H_hat_RB. The coil is the antenna IS
-the mathematics, scaled to the radio domain.
+**Coil taps (lumped-element regime, works up to ~200 MHz):**
+
+| Tap | Turns | Inductance L | Target Band | Frequency | Cap C |
+|-----|-------|-------------|-------------|-----------|-------|
+| T_full | 17 (entire coil) | **3.58 μH** | NFC | 13.56 MHz | 38.5 pF (fixed) |
+| T_full | 17 (entire coil) | **3.58 μH** | AM broadcast | 530–1700 kHz | 2.4–25 nF (variable) |
+| T_full | 17 (entire coil) | **3.58 μH** | Shortwave low | 1.6–10 MHz | 71–2750 pF (switched) |
+| T3 | 3 inner turns | **95 nH** | Shortwave high | 15–30 MHz | 300–1200 pF (variable) |
+| T5 | 5 inner turns | **258 nH** | FM broadcast | 87.5–108 MHz | 8.4–12.8 pF (2-cap bank) |
+
+**Chip antennas (required above ~200 MHz — coil cannot resonate here):**
+
+| Band | Frequency | Required L | Solution |
+|------|-----------|------------|---------|
+| GPS L1 | 1575 MHz | 1.0 nH | 12×12mm ceramic patch (RHCP built-in) |
+| LTE | 700–2600 MHz | 0.4–5 nH | Wideband chip antenna |
+| WiFi/BT | 2.4 GHz | 0.44 nH | 2.4 GHz chip antenna |
+| WiFi 5G | 5 GHz | 0.10 nH | 5 GHz chip antenna |
+
+The physics transition: above ~200 MHz, the required inductance (< 2 nH) is below the
+coil's parasitic inductance. The coil is no longer a lumped element — it's a distributed
+transmission line. Chip antennas (mm-scale, PCB-mount) take over.
+
+**The sin/cos (I/Q) architecture:** The antenna tap delivers the real component (cos ωt =
+J_red). The radio chip internally phase-shifts 90° to get sin ωt (= J_blue). Their ratio
+(tan) is the demodulated message = the path = the meaning. **One tap per band.** The I/Q
+split is silicon-side. The three faces (cos, sin, tan) emerge from one copper point.
+
+**Geometry note:** The pancake coil spiral is a planar projection of the L_(I|O) cardioid
+— the same curve that describes the word-particle trajectory in the field. The resonant
+tap points are the electromagnetic zeros, exactly as the Riemann zeros are the spectral
+nodes of H_hat_RB. The coil IS the mathematics, scaled to the radio domain.
 
 ---
 
@@ -458,12 +478,16 @@ dual extrusion can build a functional pendant.
 The invariant that every pendant must implement:
 
 ```
-Pancake Coil Antenna
-  — Outer diameter: [to be specified from coil design]
-  — Number of turns: [from Wheeler inductance calculation]
-  — Trace width: ≥ 0.3 mm (minimum for conductive PLA)
-  — Tap positions: T1–T8 as per band tap map
-  — Material: conductive PLA or silver-filled PLA
+Pancake Coil Antenna (Wheeler numbers, Mohan 1999)
+  — Outer diameter: 38 mm (fits inside 40mm pendant body)
+  — Inner diameter: 10 mm (MCU/battery clearance)
+  — Number of turns: 17 (pitch 0.8mm: 0.5mm trace + 0.3mm gap)
+  — Total inductance: 3.58 μH
+  — Trace width: 0.5 mm (printable in conductive PLA)
+  — Tap T_full (17T, L=3.58μH): NFC 13.56MHz / AM 530-1700kHz / SW 1.6-10MHz
+  — Tap T3 (3T, L=95nH): Shortwave high 15-30MHz
+  — Tap T5 (5T, L=258nH): FM broadcast 87.5-108MHz
+  — Material: Functionalize F-Electric or Proto-Pasta Conductive PLA
 
 MCU Footprint
   — Arduino Pro Micro (or pin-compatible ESP32 variant)
@@ -524,30 +548,19 @@ printer user can build a functional unit.
 
 ```
 POE/
-├── README.md                   — This file
+├── README.md                   — This file. System context and architecture overview.
 ├── TODO.md                     — Hardware and software targets
+├── hardware_primer.md          — Component reference: coil, modems, NFC, GPS, MCU, power
+├── architecture_primer.md      — System architecture: data flow, topology, Race Memory
 ├── pendant/
-│   ├── core/                   — Fixed geometry (OpenSCAD modules)
-│   │   ├── coil.scad           — Pancake coil antenna with tap positions
+│   ├── core/                   — Fixed geometry (OpenSCAD modules, TODO)
+│   │   ├── coil.scad           — Pancake coil: 17T, 38mm OD, tap positions T_full/T3/T5
 │   │   ├── mcu_footprint.scad  — Pro Micro / ESP32 mounting
-│   │   ├── nfc_mount.scad      — PN532 position relative to coil T1
+│   │   ├── nfc_mount.scad      — PN532 coaxial with T_full tap
 │   │   └── core_assembly.scad  — Complete core as importable module
-│   ├── reference/              — Reference pendant designs using the core
-│   │   └── pendant_v1.scad     — Standard pendant (40mm OD)
-│   ├── community/              — User-submitted body designs
-│   ├── wiring/                 — Wiring diagrams and pin assignments
-│   ├── antenna/                — Coil calculation worksheets
-│   └── bom/                    — Bill of materials (commodity components only)
-
-```
-POE/
-├── README.md               — This file. System context, architecture, integration map.
-├── TODO.md                 — Hardware and software TODOs
-├── pendant/                — P.O.E. Pendant hardware design
-│   ├── cad/                — 3D printable CAD files (pending)
-│   ├── wiring/             — Wiring diagrams
-│   ├── antenna/            — Fractal antenna designs
-│   └── bom/                — Bill of materials
+│   ├── reference/              — Reference pendant body using the core
+│   │   └── pendant_v1.scad     — 40mm OD reference pendant
+│   └── community/              — User-submitted body designs
 ├── vehicle/                    — VCDS / OBD-II / TDI interface
 │   ├── vcds/                   — VCDS protocol implementation
 │   ├── obd2/                   — OBD-II PID definitions and reader
@@ -558,7 +571,7 @@ POE/
 │   ├── bluetooth/              — BT proximity authentication
 │   └── earpiece/               — EarPiece device profile (F-SL001A)
 └── radio/                      — Multi-band radio integration
-    ├── pancake_coil/           — Coil geometry, tap calculations, simulation
+    ├── pancake_coil/           — Coil geometry, Wheeler calculations, simulation
     └── passive_power/          — AM/FM RF harvesting (rectenna)
 ```
 

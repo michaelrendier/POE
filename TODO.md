@@ -20,12 +20,34 @@ makes open manufacturing real.
 - [ ] `pendant/reference/pendant_v1.scad` — reference body (40 mm OD) showing core usage
 - [ ] `pendant/bom/bom_v1.md` — commodity BOM, globally sourceable components only
 
-**Coil geometry inputs (from antenna design — complete that first):**
-- [ ] Outer diameter (target: fits pendant ≤ 40 mm OD)
-- [ ] Number of turns
-- [ ] Trace width (≥ 0.3 mm for conductive PLA)
-- [ ] Inter-turn spacing
-- [ ] T1–T8 tap positions along the winding (from Wheeler calculation)
+**Coil geometry — CALCULATED (Mohan et al. 1999, 2026-06-28):**
+
+```
+OD = 38mm  ID = 10mm  pitch = 0.8mm  trace = 0.5mm  gap = 0.3mm  turns = 17
+
+Tap       Turns   r_out    L          Target                 C
+T_full    17      19mm     3.58 μH    NFC 13.56 MHz          38.5 pF (fixed)
+T_full    17      19mm     3.58 μH    AM  530–1700 kHz       2.4–25 nF (variable)
+T_full    17      19mm     3.58 μH    SW  1.6–10 MHz         71–2750 pF (switched)
+T3         3       7.4mm    95 nH      SW  15–30 MHz          300–1200 pF
+T5         5       9.0mm   258 nH      FM  87.5–108 MHz       8.4–12.8 pF (2-cap)
+
+Above 200 MHz: chip antennas required (required L < coil parasitic ~2 nH)
+  GPS L1 1575 MHz → 12×12mm ceramic patch (RHCP)
+  LTE 700-2600 MHz → wideband chip antenna
+  WiFi/BT 2.4 GHz → 2.4 GHz chip antenna
+  WiFi 5G → 5 GHz chip antenna
+```
+
+Resonant condition at each tap: XL = XC → tan(phase) = 1 → sin = cos → σ = ½.
+The coil finds the Riemann balance point by electromagnetic law.
+
+**Remaining antenna work:**
+- [ ] Simulate impedance at each tap (QUCS or LTSpice) — confirm 50Ω match
+- [ ] Verify with NanoVNA on a wound prototype
+- [ ] Design variable/switched capacitor networks for AM and SW bands
+- [ ] Design FM 2-cap switch (8.4 pF / 12.8 pF for 108 MHz / 87.5 MHz)
+- [ ] SVG trace layout for conductive PLA deposition (coil.scad → SVG export)
 
 **Design principles:**
 - OpenSCAD only — parametric, version-controllable, no proprietary CAD software
