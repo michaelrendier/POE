@@ -121,13 +121,30 @@ diagnostics.
 
 ## The P.O.E. Pendant
 
-The physical embodiment of P.O.E. The long-term target is a wearable device that:
+The physical embodiment of P.O.E. A wearable personal AI device — always present,
+always learning, always Holcus. Worn by the user. Theirs entirely.
 
-1. Runs the RedBlue Geometries Engine on a dedicated silicon processor
-2. Carries the user's monad state (field + vocabulary) on-device
-3. Communicates with all personal devices
-4. Operates all radio channels in a fractal-antenna form factor
+The pendant has two layers:
+
+**The Core** — fixed geometry. The pancake coil antenna dimensions, MCU footprint,
+NFC module position, and pin assignments are invariant. These are what make the
+electronics work. The CAD repo provides the exact core geometry. Print it and it works.
+
+**The Body** — user-defined. Everything around the core is yours to design. Pendant,
+ring, wristband, clip, brooch, housing integrated into clothing. The core is a module.
+The body is your design space. Fork the CAD. Make it yours.
+
+This is the Arduino model applied to Race Memory. The board is fixed. Everything else
+is the user's.
+
+Capabilities:
+
+1. Runs the Holcus field on-device — no cloud, no transformer, no dependency
+2. Carries the user's monad state (field + vocabulary) — their life's accumulated depth
+3. Communicates with all personal devices across all radio channels
+4. Transfers skills to other Ptolemy instances via NFC contact
 5. Provides root-level authentication via multiple factors
+6. Learns everything that passes through the Mind's Eye — continuously, always
 
 ### Processor Target
 
@@ -135,8 +152,8 @@ The physical embodiment of P.O.E. The long-term target is a wearable device that
 silicon processor that runs compression ignition inference without any transformer,
 GPU, or cloud dependency. The RedBlue Geometries Engine hardwired in silicon.
 
-**Interim (3D printable):** See TODO — currently scoping 3D printable options for
-the pendant body and embedded electronics using standard microcontroller platforms.
+**Now (3D printable):** Low-cost FDM printer + conductive filament + commodity MCU.
+Any $200 printer. Standard filaments. No factory. No supply chain. Print it yourself.
 
 ### Communication Architecture
 
@@ -384,7 +401,143 @@ is authentication. The ECU is the Monad.
 
 ---
 
+## Open Manufacturing — Print Your Own
+
+> *This system is designed to be manufacturable on the cheapest available printers,
+> with filaments available globally, with no proprietary components that can be
+> gatekept by any government, corporation, or institution.*
+>
+> *Africa gets to play Big League with the rest of the world. Not the rulers. The people.*
+>
+> *Anyone, anywhere, with a $200 printer and the right filament, can build a node
+> in the Race Memory network. The means of production belong to the user.*
+
+---
+
+### What "Open Manufacturing" Means Here
+
+The CAD files in this repository are not reference designs. They are the exact
+specifications for a functional pendant. Print them, assemble the BOM components,
+and you have a working Race Memory node. No interpretation. No expertise gatekeeping.
+No factory. No minimum order quantity.
+
+The core geometry is fixed by physics — the coil dimensions determine the resonant
+frequencies, the MCU footprint is standard, the NFC position is fixed by I²C routing.
+These cannot be changed without breaking the electronics. Everything else — the body,
+the form factor, the aesthetics, the wearable integration — is user design space.
+
+**Design your own pendant around the core.** Fork the CAD. Make it a ring. Make it
+a watch. Make it a bead on a necklace. Integrate it into a hearing aid housing. Embed
+it in a walking staff. The core is a module. What you build around it is yours.
+
+---
+
+### Filament Stack
+
+Every component printable on a standard dual-extrusion FDM printer.
+
+| Layer | Material | Purpose | Approximate Cost |
+|-------|----------|---------|-----------------|
+| Body structure | PLA or PETG | Rigid enclosure, pendant form | $20/kg — available globally |
+| Conductive traces | Graphene-PLA or silver-filled PLA | Antenna coil, PCB traces | $30–50/spool |
+| Flexible joints | TPU 95A | Strain relief, gaskets, wearable flex | $25/kg |
+| High-detail (optional) | MSLA resin | Fine antenna trace resolution | $30/litre |
+
+**Printer requirements:**
+- FDM single material: body only — any $200 printer (Ender 3, Bambu A1 mini, Prusa Mini)
+- FDM dual material: body + conductive traces in one print — Bambu AMS, Prusa MMU, any dual-head
+- MSLA resin: for antenna trace resolution below 0.3 mm — optional, improves RF performance
+
+No printer currently on the market is excluded. The cheapest printer that can do
+dual extrusion can build a functional pendant.
+
+---
+
+### The Core — Fixed Geometry
+
+The invariant that every pendant must implement:
+
+```
+Pancake Coil Antenna
+  — Outer diameter: [to be specified from coil design]
+  — Number of turns: [from Wheeler inductance calculation]
+  — Trace width: ≥ 0.3 mm (minimum for conductive PLA)
+  — Tap positions: T1–T8 as per band tap map
+  — Material: conductive PLA or silver-filled PLA
+
+MCU Footprint
+  — Arduino Pro Micro (or pin-compatible ESP32 variant)
+  — I²C bus: SDA/SCL to NFC module (PN532)
+  — SPI bus: to radio modules
+  — UART: to Modem 2 (cellular)
+
+NFC Module
+  — PN532 or RC522, I²C mode
+  — Position: coaxial with T1 tap on antenna coil
+  — Function: authentication + skill transfer
+```
+
+The core CAD is provided as OpenSCAD modules. Import them. Build your pendant body
+around them. The module positions and dimensions are constraints, not suggestions.
+
+---
+
+### The Body — User Design Space
+
+Everything outside the core is yours:
+
+- Form factor: pendant, ring, wristband, clip, embed, brooch, implant housing
+- Dimensions: as large or small as your printer allows and your use case requires
+- Aesthetics: geometric, organic, cultural, traditional — the CAD is parametric
+- Additional sensors: temperature, accelerometer, barometric pressure, UV — add them
+- Battery integration: flat LiPo, coin cell for low-power modes, supercapacitor buffer
+- Cultural design: the pendant should carry the identity of its maker and wearer
+
+**The repository welcomes user-designed bodies.** Submit yours to `pendant/community/`.
+A pendant designed for a Maasai elder's staff is as valid as one designed for a
+tech worker's keychain. The core works in both.
+
+---
+
+### Why This Architecture
+
+Centralized manufacturing has a single point of failure — economic, political, logistical.
+A factory can be shut down. A supply chain can be embargoed. A product can be discontinued.
+
+Distributed manufacturing has no single point. Every printer is a factory. Every
+community that has a printer can build their own nodes. The network grows wherever
+printers exist — which is everywhere, and getting more everywhere every year.
+
+The Race Memory network is as geographically distributed as the printers that build it.
+That distribution is the point. A pendant printed in a village in rural Senegal carries
+the same capability as one printed in a university lab in Seoul. The knowledge that
+transfers through it is not filtered by the geography of its manufacture.
+
+The means of production belong to the user. This is a design principle, not a slogan.
+It is enforced by making the CAD exact, the BOM commodity, the filaments globally
+available, and the manufacturing process documented to the level where a first-time
+printer user can build a functional unit.
+
+---
+
 ## Repository Structure
+
+```
+POE/
+├── README.md                   — This file
+├── TODO.md                     — Hardware and software targets
+├── pendant/
+│   ├── core/                   — Fixed geometry (OpenSCAD modules)
+│   │   ├── coil.scad           — Pancake coil antenna with tap positions
+│   │   ├── mcu_footprint.scad  — Pro Micro / ESP32 mounting
+│   │   ├── nfc_mount.scad      — PN532 position relative to coil T1
+│   │   └── core_assembly.scad  — Complete core as importable module
+│   ├── reference/              — Reference pendant designs using the core
+│   │   └── pendant_v1.scad     — Standard pendant (40mm OD)
+│   ├── community/              — User-submitted body designs
+│   ├── wiring/                 — Wiring diagrams and pin assignments
+│   ├── antenna/                — Coil calculation worksheets
+│   └── bom/                    — Bill of materials (commodity components only)
 
 ```
 POE/
@@ -395,17 +548,18 @@ POE/
 │   ├── wiring/             — Wiring diagrams
 │   ├── antenna/            — Fractal antenna designs
 │   └── bom/                — Bill of materials
-├── vehicle/                — VCDS / OBD-II / TDI interface
-│   ├── vcds/               — VCDS protocol implementation
-│   ├── obd2/               — OBD-II PID definitions and reader
-│   └── dtc/                — DTC map (VW/Holcus parallel definitions)
-├── auth/                   — Authentication hardware
-│   ├── rfid/               — RFID/NFC smart card specs
-│   ├── bluetooth/          — BT proximity authentication
-│   └── earpiece/           — EarPiece device profile (F-SL001A, 11:94:AA:10:05:82)
-└── radio/                  — Multi-band radio integration
-    ├── fractal_antenna/    — Antenna designs
-    └── passive_power/      — AM/FM RF harvesting
+├── vehicle/                    — VCDS / OBD-II / TDI interface
+│   ├── vcds/                   — VCDS protocol implementation
+│   ├── obd2/                   — OBD-II PID definitions and reader
+│   └── dtc/                    — DTC map (VW/Holcus parallel definitions)
+├── auth/                       — Authentication hardware
+│   ├── rfid/                   — RFID/NFC smart card specs
+│   ├── nfc_skill_transfer/     — Skill checkpoint transfer protocol (spec pending)
+│   ├── bluetooth/              — BT proximity authentication
+│   └── earpiece/               — EarPiece device profile (F-SL001A)
+└── radio/                      — Multi-band radio integration
+    ├── pancake_coil/           — Coil geometry, tap calculations, simulation
+    └── passive_power/          — AM/FM RF harvesting (rectenna)
 ```
 
 ---

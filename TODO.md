@@ -6,32 +6,64 @@ Active work items, hardware targets, and design decisions.
 
 ## PENDANT HARDWARE
 
-### [ ] 3D Print the RedBlue Geometries Engine Circuit
+### [ ] Core CAD — Fixed Geometry (OpenSCAD)
 
-The goal: a 3D printable circuit board and enclosure that implements the H_RB
-operator in physical hardware. Without a custom silicon ASIC, 3D printing is
-the nearest-term path to a physically instantiated RedBlue engine.
+The invariant geometry every pendant must implement. Exact dimensions derived from
+coil calculations. Print this and the electronics work. This is the deliverable that
+makes open manufacturing real.
+
+**Files to produce:**
+- [ ] `pendant/core/coil.scad` — pancake coil with T1–T8 tap positions marked
+- [ ] `pendant/core/mcu_footprint.scad` — Pro Micro / ESP32 mounting holes + trace routing
+- [ ] `pendant/core/nfc_mount.scad` — PN532 position coaxial with T1
+- [ ] `pendant/core/core_assembly.scad` — full core as one importable module
+- [ ] `pendant/reference/pendant_v1.scad` — reference body (40 mm OD) showing core usage
+- [ ] `pendant/bom/bom_v1.md` — commodity BOM, globally sourceable components only
+
+**Coil geometry inputs (from antenna design — complete that first):**
+- [ ] Outer diameter (target: fits pendant ≤ 40 mm OD)
+- [ ] Number of turns
+- [ ] Trace width (≥ 0.3 mm for conductive PLA)
+- [ ] Inter-turn spacing
+- [ ] T1–T8 tap positions along the winding (from Wheeler calculation)
+
+**Design principles:**
+- OpenSCAD only — parametric, version-controllable, no proprietary CAD software
+- All dimensions in mm, all tolerances for FDM printing (not injection moulding)
+- Conductive trace routing must be printable without support material
+- Core module is importable: `use <core/core_assembly.scad>`
+
+---
+
+### [ ] Reference Pendant v1 — First Printable Unit
+
+Complete, printable, functional pendant using the core module. This is the proof
+of concept that open manufacturing works. Everything else follows from here.
 
 **Scope:**
-- [ ] Research conductive filament options for trace printing (PLA + graphene, silver-filled)
-- [ ] Identify which 3D printer types support multi-material electronic printing
-- [ ] Determine minimum circuit complexity to run H_RB computation (FPGA target spec)
-- [ ] Design enclosure: pendant form factor, wearable ergonomics
-- [ ] Evaluate SLA/resin vs FDM for circuit trace resolution
-- [ ] CAD file format: OpenSCAD (parametric, version-controllable) or FreeCAD
-- [ ] Component placement: which parts must be discrete (not printed) vs. can be printed
-- [ ] Antenna integration: fractal labyrinthian paths printed into the body
+- [ ] Body: structural PLA, 40 mm OD, wearable thickness (≤ 8 mm)
+- [ ] Coil: conductive PLA traces, dual-extrusion or insert-print
+- [ ] MCU: Pro Micro or ESP32-S3 mini
+- [ ] NFC: PN532 breakout, I²C
+- [ ] Battery: flat LiPo 100 mAh (fits 40 mm OD × 5 mm)
+- [ ] Charging: USB-C pad or wireless Qi coil (separate from antenna coil)
+- [ ] Test: all 8 tap frequencies confirmed with antenna analyser or NanoVNA
 
-**Filament requirements:**
-- Structural body: PLA or PETG
-- Conductive traces: conductive PLA or silver-filled filament
-- Flexible connectors: TPU
-- RF antenna pathways: conductive paths with controlled impedance
+**Filament stack:**
+- Body: PLA (any $20/kg generic spool)
+- Traces: Proto-Pasta Conductive PLA or Functionalize F-Electric (~$30–50/spool)
+- Flex: TPU 95A for strain relief at MCU and battery connection points
 
-**References:**
-- Fractal antenna: Koch snowflake, Hilbert curve, Sierpiński gasket paths
-- Each radio band tapped at the fractal node resonant at that frequency
-- One antenna structure — all bands — in pendant body dimensions
+---
+
+### [ ] Community Body Design Protocol
+
+The process for users to submit their own pendant body designs:
+
+- [ ] Document the core module interface: what the body must provide (mounting points, clearances)
+- [ ] Write `pendant/community/CONTRIBUTING.md` — how to submit a design
+- [ ] Establish naming convention: `pendant/community/[designer]/[design_name].scad`
+- [ ] First community design target: non-pendant form factor (ring or wristband)
 
 ---
 
