@@ -2,8 +2,9 @@
 
 **Status: CONCEPT. Nothing here has been built or measured.** This page records the design as the author states it, the constraints that are
 fixed, the stated working figures, and the questions still open, so that integrated-circuit, nanotechnology and mechanical engineers can start
-from one page. The 3D mock-up is `pendant/cad/blender/poe_servo_ring.py` (Blender 4.x, python3); the next representation is OpenSCAD, and a
-Fritzing board map for the electronics.
+from one page. The narrative 3D mock-up is `pendant/cad/blender/poe_servo_ring.py` (Blender 4.x, python3); the full-scale planning rig is OpenSCAD in
+`pendant/cad/scad/` (wall-mounted ring, working volume to about 4 ft, derived constraints in its README); a Fritzing board map for the electronics
+is next.
 
 ## The idea
 

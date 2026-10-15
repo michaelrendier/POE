@@ -1,0 +1,29 @@
+RING SIZE for pitch 48 mm per arm (1/2 in stock, ring centre-line diameter):
+  N = 13: D =    199 mm  (R =    99 mm)   circumference 624 mm
+  N = 18: D =    275 mm  (R =   138 mm)   circumference 864 mm
+
+WORKING VOLUME: depth 0.30..1.22 m, lateral radius = depth x tan(20 deg)
+  N = 13: worst tilt from the wall normal  34.8 deg; arm-to-focus distance 0.30..1.34 m
+  N = 18: worst tilt from the wall normal  39.4 deg; arm-to-focus distance 0.30..1.35 m
+
+PER-DISTANCE BEAM FIGURES (diffraction-limited waist w0 = lambda d / (pi W), W = 5.0 mm; lens f = 50 mm):
+   d (m)   w0 (um)   Rayleigh z_R (mm)   pointing tolerance w0/(4d) (urad)   fibre-tip focus shift f^2/(d-f) (mm)
+    0.30        12               1                               10                            10.00
+    0.60        24               3                               10                             4.55
+    0.90        36               7                               10                             2.94
+    1.22        49              12                               10                             2.14
+    1.50        60              18                               10                             1.72
+
+COARSE SERVO vs REQUIREMENT at 1.22 m: one servo step = 1534 urad (= 0.088 deg) -> 1.87 mm at the target;
+  tolerance w0/(4d) = 10 urad  ->  the servo step is 152x too coarse by itself. A fine stage is REQUIRED.
+FINE STAGE (lateral fibre-tip shift behind the lens, angle = shift / f): to cover one servo step needs +-0.038 mm of shift;
+  to resolve 3 urad needs 126 nm steps: piezo-class, not a hobby actuator.
+
+FOCUS (axial fibre-tip shift): about 8 mm of travel covers 0.3 m to 1.5 m for f = 50 mm; resolution needed ~ z_R / 20 at the far end.
+
+PHASE: path from each arm to a point changes by up to ~1.2 m as the point moves: the phase actuator must wrap modulo 2 pi;
+  keeping 96% of the peak needs about lambda/30 = 21 nm of path error per arm; mechanical metrology cannot give that over a metre,
+  so phase has to be closed on a signal at the focus (fog-lit point -> pinhole photodiode), not set from geometry alone.
+AIR: dn/dT ~ 1e-6 per K, so 1.2 m of path moves 1200 nm per K; a still-air tent and a phase loop of ~1 kHz or better are assumed.
+
+POWER at the test: 13 arms x 75 uW = 0.98 mW total (about class 2); 18 arms x 75 uW = 1.35 mW (check the class: 18 x 75 uW exceeds 1 mW).
