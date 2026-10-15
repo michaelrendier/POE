@@ -608,4 +608,13 @@ prevents impersonation. The pendant announces itself. Always.
 
 ---
 
+## License
+
+Proprietary. Not for sale or licensing. See `LICENSE`.
+
+## Looking for collaborators
+
+Partners in design or production can be discussed. Wanted: integrated circuit engineers, nanotechnology engineers, and 3D modelers
+for 3D-printing guidance. Contact: the.wandering.god@gmail.com
+
 © 2026 Cody Michael Allison. All rights reserved.
