@@ -19,6 +19,8 @@ P.O.E. is the **hardware and integration layer** of the Ptolemy system. Where Pt
 
 The ultimate expression of P.O.E. is the **Pendant**: a wearable personal AI device running the RedBlue Geometries Engine on dedicated silicon, worn by the user, always present, always Holcus.
 
+The pendant's form takes its name and inspiration from the Edgar Allan Poe AI pendant of *Altered Carbon* (season 2): **P.O.E. = Ptolemy On Everything.**
+
 This repo tracks:
 - The P.O.E. Pendant hardware design (3D printing, electronics, antennas)
 - Vehicle interface (VCDS / OBD-II / TDI engine diagnostic layer)
@@ -146,6 +148,20 @@ Capabilities:
 5. Provides root-level authentication via multiple factors
 6. Learns everything that passes through the Mind's Eye — continuously, always
 
+### The Free-Standing Point of Light (concept)
+
+A second capability planned for the pendant is a **free-standing point of light**: several weak, individually near-invisible deep-red laser
+beams, aimed from a ring so that they all pass through one point and arrive there in phase, add constructively at that point (N equal beams give N²
+times one beam's intensity there). The ring carries independent arms that each have three axes (pan, tilt and a focus slide), so the point can be
+moved in three dimensions and shapes traced; the intended use is a naked-eye augmented-reality point of light projected from the pendant.
+
+- It is a **concept**; nothing is built or measured. The macro-scale ring is the prototype to build from, to be handed to integrated-circuit and
+  nanotechnology engineers to miniaturise.
+- A hard-no cone around the direction to the wearer's eyes is forbidden to every beam, enforced in hardware (and, later, an eye tracker).
+- Page: [`pendant/optics/FREE_STANDING_POINT_OF_LIGHT.md`](pendant/optics/FREE_STANDING_POINT_OF_LIGHT.md). 3D mock-up (Blender, python3):
+  [`pendant/cad/blender/poe_servo_ring.py`](pendant/cad/blender/poe_servo_ring.py), with preview renders beside it.
+- Open questions, including whether the point can be seen without a scattering medium, are listed on that page.
+
 ### Processor Target
 
 **Goal:** A custom ASIC or FPGA implementation of the H_RB Hamiltonian — a
@@ -237,6 +253,12 @@ not by design. See [hardware_primer.md](hardware_primer.md) for full derivation.
 The physics transition: above ~200 MHz, the required inductance (< 2 nH) is below the
 coil's parasitic inductance. The coil is no longer a lumped element — it's a distributed
 transmission line. Chip antennas (mm-scale, PCB-mount) take over.
+
+> **Correction pending measurement (2026-10-14).** The tap inductances above use `μ₀ n² d_avg / (1 + 2.46 ρ)`, which omits a leading constant; the
+> current-sheet expansion for a circular spiral gives about 1.8× more (whole coil about 6.5 µH, not 3.58 µH), which changes every tuning capacitor.
+> A coil printed in conductive PLA also has a Q far below 1 with realistic resistivity (about 0.006 at 13.56 MHz by the estimate in the guide),
+> so the RF coil is specified in **copper** with the printed version as a prototype former. See
+> [`radio/pancake_coil/COIL_PRODUCTION.md`](radio/pancake_coil/COIL_PRODUCTION.md) and `radio/pancake_coil/coil_design.py`. A NanoVNA measurement decides.
 
 **The sin/cos (I/Q) architecture:** The antenna tap delivers the real component (cos ωt =
 J_red). The radio chip internally phase-shifts 90° to get sin ωt (= J_blue). Their ratio
@@ -558,6 +580,8 @@ POE/
 │   │   ├── mcu_footprint.scad  — Pro Micro / ESP32 mounting
 │   │   ├── nfc_mount.scad      — PN532 coaxial with T_full tap
 │   │   └── core_assembly.scad  — Complete core as importable module
+│   ├── optics/                 — Free-standing point of light: concept page
+│   ├── cad/blender/            — Servo-ring mock-up (python3 + Blender), preview renders
 │   ├── reference/              — Reference pendant body using the core
 │   │   └── pendant_v1.scad     — 40mm OD reference pendant
 │   └── community/              — User-submitted body designs
@@ -571,7 +595,7 @@ POE/
 │   ├── bluetooth/              — BT proximity authentication
 │   └── earpiece/               — EarPiece device profile (F-SL001A)
 └── radio/                      — Multi-band radio integration
-    ├── pancake_coil/           — Coil geometry, Wheeler calculations, simulation
+    ├── pancake_coil/           — Coil production guide (copper; printed PLA in an appendix), coil_design.py
     └── passive_power/          — AM/FM RF harvesting (rectenna)
 ```
 
