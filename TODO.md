@@ -149,6 +149,64 @@ AM/FM broadcast as passive power source for low-power components:
 
 ---
 
+### [ ] Craftsman Body/Hand Tracking — Pendant as Pose Recorder
+
+> **ENGINEERING GUIDANCE (2026-10-04).** Design discussion, not a spec. Rough costs and
+> accuracy figures are estimates and unverified; nothing here is built or measured.
+
+**Goal:** record a craftsman's arm/hand motion as compact 3D paths (wireframe: joints +
+angles) so the pendant can pass on a master's technique (feeds NFC Skill Transfer).
+
+**Sensing — passive vision, not a laser.** A laser gives one point; full field of view needs
+a scanning mirror or dot projector (cost, power, eye safety, fails on shiny metal/glass/sun).
+Instead: wide-angle camera + pose model (MediaPipe Pose 33 landmarks, Hands 21/hand).
+Low light: NoIR camera + 850 nm LED flood (eye-safe lamp, not a laser). Depth from stereo
+pair (good at 30–60 cm), learned monocular depth, or marker scale. Accuracy centimetre-class,
+not millimetre: fine for technique/gesture, not metrology.
+
+**Mode A — worn on chest (recommended primary).** Sees hands, forearms, tool from the
+craftsman's viewpoint; portable. Elbows/shoulders mostly out of frame; recover roughly by IK
+from wrist position + arm length. Hands+tool trajectory relative to workpiece is the content
+that matters for skill transfer; whole-body posture is secondary.
+
+**Mode B — off-body on a stand facing the worker.** Whole body, true joints/angles, no swing;
+but occlusion by work/body and tied to one bench. Same firmware, different pose source.
+Two pendants (A+B) can cross-validate.
+
+**Swing handling — bench markers solve more than swing.**
+- 1–3 printed AprilTags on the bench → camera 6-DoF pose in world frame (PnP) each frame a
+  tag is visible; also fixes metric scale (removes monocular depth ambiguity).
+- 6-axis IMU (BMI270 / ICM-42688 class, ~$3–5) bridges tag dropouts at 100+ Hz
+  (visual-inertial fusion).
+- Pendulum swing f = (1/2π)√(g/L) ≈ 0.8 Hz at L = 40 cm: slow vs IMU and frame rate.
+- Pendant faces forward upright, toward floor when leaning over bench → wide FOV (160°+).
+
+**Record format.**
+- Canonical: time-stamped 3D polyline per joint (wrist, fingertips, optionally elbow) in the
+  bench-tag world frame; append-only ("progressive/continuous").
+- SVG = export/view layer (SVG has no time or z): oblique/orthographic projection, three
+  orthographic views, or z in a `data-` attribute. Precedent: ptol.c σ¹⁶ polyline SVGs.
+- Size: 42 hand landmarks, float16, 30 Hz ≈ 27 MB/hr; wrist + fingertips only (12 pts)
+  ≈ 8 MB/hr; before spline / Douglas–Peucker simplification.
+- Skeleton-only storage never records faces/bystanders, but cannot be re-solved with a better
+  model later. Make raw-video retention an explicit switch (keep N minutes / never).
+
+**Build path (cheapest first):**
+- [ ] 1. Phone prototype: chest-mounted phone, 2 printed AprilTags, MediaPipe Hands + tag PnP
+      offline on PC. Measure how often hands leave frame. ~zero hardware cost.
+- [ ] 2. Record-now-solve-later pendant: Pi Zero 2 W + wide camera + IMU + battery logging
+      video + IMU; pose solve on PC. Est. $40–60.
+- [ ] 3. Real-time on-pendant pose, once the offline pipeline is trusted.
+
+**Open questions:**
+- [ ] Purpose: teaching (replay master's trajectories → favours worn, hands-only) vs
+      ergonomics/posture analysis (needs off-body view)?
+- [ ] Skeleton-only storage acceptable, or retain raw video?
+- [ ] Reconcile with Reference Pendant v1 constraints (40 mm OD, ≤ 8 mm, 100 mAh LiPo):
+      camera + IMU + logging power budget is not yet checked against this.
+
+---
+
 ## AUTHENTICATION
 
 ### [ ] EarPiece Integration (F-SL001A — 11:94:AA:10:05:82)
